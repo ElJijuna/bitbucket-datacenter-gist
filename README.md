@@ -213,12 +213,3 @@ src/
 ## License
 
 MIT
-
-
-
-git tag -d v0.2.0
-git push origin :refs/tags/v0.2.0
-
-# 3. Recrear el tag en el nuevo commit y pushear
-git tag v0.2.0
-git push origin v0.2.0
