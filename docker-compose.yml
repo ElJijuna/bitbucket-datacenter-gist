@@ -10,27 +10,33 @@ services:
       - "3000:3000"
     environment:
       - BITBUCKET_SERVER_HOST=${BITBUCKET_SERVER_HOST}
-      - BITBUCKET_API_HOST=${BITBUCKET_API_HOST}
+      - BITBUCKET_API_HOST=${BITBUCKET_API_HOST:-}
       - BITBUCKET_USER=${BITBUCKET_USER}
-      - BITBUCKET_TOKEN=${BITBUCKET_TOKEN}
+      - BITBUCKET_TOKEN=${BITBUCKET_TOKEN:-}
       - ALLOWED_REPOS=${ALLOWED_REPOS}
+      - GIT_CLONE_PROTOCOL=${GIT_CLONE_PROTOCOL:-ssh}
+      - BITBUCKET_SSH_PORT=${BITBUCKET_SSH_PORT:-7999}
+      - BITBUCKET_HTTPS_PORT=${BITBUCKET_HTTPS_PORT:-443}
       - GIT_USER_NAME=${GIT_USER_NAME:-}
       - GIT_USER_EMAIL=${GIT_USER_EMAIL:-}
+      - GIT_PULL_INTERVAL=${GIT_PULL_INTERVAL:-30}
+      - GIT_PUSH_DEBOUNCE=${GIT_PUSH_DEBOUNCE:-500}
       - PORT=3000
       - NODE_ENV=production
-      - LOG_LEVEL=info
+      - LOG_LEVEL=${LOG_LEVEL:-info}
     volumes:
       - ./cloned-repos:/app/cloned-repos
       - ./.env:/app/.env:ro
+      - ${SSH_KEY_PATH:-~/.ssh}:/root/.ssh:ro
     restart: unless-stopped
     networks:
       - gist-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 10s
+      start_period: 15s
 
 networks:
   gist-network:

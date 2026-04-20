@@ -10,6 +10,9 @@ const { PORT = 3000 } = process.env;
 const UI_DIST = path.resolve('./ui/dist');
 
 const requiredEnvVars = ['BITBUCKET_SERVER_HOST', 'BITBUCKET_USER', 'ALLOWED_REPOS'];
+if ((process.env.GIT_CLONE_PROTOCOL || 'ssh') === 'https') {
+  requiredEnvVars.push('BITBUCKET_TOKEN');
+}
 
 for (const envVar of requiredEnvVars) {
   if (!process.env[envVar]) {

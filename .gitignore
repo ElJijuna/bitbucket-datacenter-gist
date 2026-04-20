@@ -39,6 +39,8 @@ coverage/
 # Build output
 dist/
 build/
+ui/dist/
+ui/src/routeTree.gen.js
 
 # Temporary files
 tmp/
