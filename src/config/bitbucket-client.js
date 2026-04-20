@@ -1,11 +1,12 @@
-import BitbucketDataCenterClient from 'bitbucket-datacenter-api-client';
+import { BitbucketClient, Security } from 'bitbucket-datacenter-api-client';
 
 export function initializeBitbucketClient() {
-    const client = new BitbucketDataCenterClient({
-        baseUrl: process.env.BITBUCKET_API_HOST,
-        username: process.env.BITBUCKET_USER,
-        password: process.env.BITBUCKET_TOKEN,
-    });
+    const security = new Security(
+        process.env.BITBUCKET_API_HOST,
+        process.env.BITBUCKET_USER,
+        process.env.BITBUCKET_TOKEN,
+    );
+    const client = new BitbucketClient(security);
 
     return client;
 }
