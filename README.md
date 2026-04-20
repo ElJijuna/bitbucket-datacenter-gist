@@ -28,15 +28,14 @@ cp .env.example .env
 ### Environment variables
 
 | Variable | Required | Description |
-|----------|----------|-------------|
+| -------- | -------- | ----------- |
 | `BITBUCKET_SERVER_HOST` | Yes | Bitbucket base URL (e.g. `https://bitbucket.example.com`) |
 | `BITBUCKET_USER` | Yes | Bitbucket username (used for git commit author) |
 | `ALLOWED_REPOS` | Yes | Whitelisted repos — see format below |
-| `BITBUCKET_SSH_PORT` | No | SSH port (default: `7999`) |
+| `GIT_CLONE_PROTOCOL` | No | `ssh` (default) or `https` |
+| `BITBUCKET_SSH_PORT` | No | SSH port (default: `7999`) — only used when `GIT_CLONE_PROTOCOL=ssh` |
+| `BITBUCKET_TOKEN` | No | API token — required when `GIT_CLONE_PROTOCOL=https` |
 | `BITBUCKET_API_HOST` | No | REST API URL — required only for `/api/repository/*` routes |
-| `BITBUCKET_TOKEN` | No | API token — required only for `/api/repository/*` routes |
-| `BITBUCKET_PROJECT` | No | Default project — required only for `/api/repository/*` routes |
-| `BITBUCKET_REPOSITORY` | No | Default repo — required only for `/api/repository/*` routes |
 | `GIT_USER_NAME` | No | Commit author name (default: `BITBUCKET_USER`) |
 | `GIT_USER_EMAIL` | No | Commit author email (default: `BITBUCKET_USER@bitbucket-gist`) |
 | `PORT` | No | Server port (default: `3000`) |
@@ -101,22 +100,24 @@ bun run dev        # serves API + UI on :3000
 
 ### Health check
 
-```
+```text
 GET /health
 ```
 
 ### Write a file
 
-```
+```text
 POST /api/projects/:project/repos/:repo/gists/:file
 ```
 
 **Body:**
+
 ```json
 { "content": "file content here" }
 ```
 
 **Response `200`:**
+
 ```json
 { "file": "app-report.json", "updatedAt": "2026-04-20T10:00:00.000Z" }
 ```
@@ -163,7 +164,7 @@ curl http://localhost:3000/health
 
 Repos are cached under `cloned-repos/` namespaced by project key:
 
-```
+```text
 cloned-repos/
 ├── PROJ/
 │   └── reportes/
@@ -173,7 +174,7 @@ cloned-repos/
 
 ## Project structure
 
-```
+```text
 src/
 ├── api/
 │   ├── server.js              # Bun native server + env validation

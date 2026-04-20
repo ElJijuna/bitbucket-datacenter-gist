@@ -48,10 +48,20 @@ class GitManager {
     return [...registry.values()];
   }
 
-  buildSshUrl() {
+  buildRepoUrl() {
+    const protocol = (process.env.GIT_CLONE_PROTOCOL || 'ssh').toLowerCase();
+    const proj = this.project.toLowerCase();
+
+    if (protocol === 'https') {
+      const base = process.env.BITBUCKET_SERVER_HOST.replace(/\/$/, '');
+      const user = encodeURIComponent(process.env.BITBUCKET_USER);
+      const token = encodeURIComponent(process.env.BITBUCKET_TOKEN);
+      return `${base.replace(/^(https?:\/\/)/, `$1${user}:${token}@`)}/scm/${proj}/${this.repo}.git`;
+    }
+
     const host = process.env.BITBUCKET_SERVER_HOST.replace(/^https?:\/\//, '');
     const port = process.env.BITBUCKET_SSH_PORT || '7999';
-    return `ssh://git@${host}:${port}/scm/${this.project.toLowerCase()}/${this.repo}.git`;
+    return `ssh://git@${host}:${port}/scm/${proj}/${this.repo}.git`;
   }
 
   async _init() {
@@ -59,7 +69,7 @@ class GitManager {
       if (!fs.existsSync(this.repoPath)) {
         logger.info(`Cloning ${this.project}/${this.repo}...`);
         fs.mkdirSync(path.dirname(this.repoPath), { recursive: true });
-        await simpleGit().clone(this.buildSshUrl(), this.repoPath);
+        await simpleGit().clone(this.buildRepoUrl(), this.repoPath);
         logger.info(`✓ Cloned ${this.project}/${this.repo}`);
       }
       this.git = simpleGit(this.repoPath);
