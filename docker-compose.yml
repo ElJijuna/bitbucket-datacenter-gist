@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  gist-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bitbucket-gist-api
+    ports:
+      - "3000:3000"
+    environment:
+      - BITBUCKET_SERVER_HOST=${BITBUCKET_SERVER_HOST}
+      - BITBUCKET_API_HOST=${BITBUCKET_API_HOST}
+      - BITBUCKET_USER=${BITBUCKET_USER}
+      - BITBUCKET_TOKEN=${BITBUCKET_TOKEN}
+      - ALLOWED_REPOS=${ALLOWED_REPOS}
+      - GIT_USER_NAME=${GIT_USER_NAME:-}
+      - GIT_USER_EMAIL=${GIT_USER_EMAIL:-}
+      - PORT=3000
+      - NODE_ENV=production
+      - LOG_LEVEL=info
+    volumes:
+      - ./cloned-repos:/app/cloned-repos
+      - ./.env:/app/.env:ro
+    restart: unless-stopped
+    networks:
+      - gist-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+networks:
+  gist-network:
+    driver: bridge

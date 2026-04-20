@@ -1,0 +1,36 @@
+{
+    "name": "bitbucket-datacenter-gist",
+    "version": "0.1.0",
+    "description": "GitHub Gist-like application for Bitbucket Data Center",
+    "type": "module",
+    "main": "src/index.js",
+    "scripts": {
+        "start": "bun src/api/server.js",
+        "dev": "bun --watch src/api/server.js",
+        "test": "bun test",
+        "lint": "eslint src/",
+        "lint:fix": "eslint src/ --fix"
+    },
+    "keywords": [
+        "bitbucket",
+        "gist",
+        "datacenter",
+        "bun",
+        "api"
+    ],
+    "author": "",
+    "license": "MIT",
+    "dependencies": {
+        "simple-git": "^3.22.0",
+        "dotenv": "^16.3.1",
+        "axios": "^1.6.0",
+        "bitbucket-datacenter-api-client": "^1.0.0"
+    },
+    "devDependencies": {
+        "eslint": "^8.52.0",
+        "bun-types": "latest"
+    },
+    "engines": {
+        "bun": ">=1.0.0"
+    }
+}
