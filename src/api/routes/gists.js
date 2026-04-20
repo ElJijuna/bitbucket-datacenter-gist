@@ -35,11 +35,13 @@ export default async function gistRoutes(request) {
     const body = await request.json();
     const { content } = body;
 
-    if (!content) return json({ error: 'content is required' }, 400);
+    if (content === undefined || content === null) return json({ error: 'content is required' }, 400);
+
+    const contentStr = typeof content === 'string' ? content : JSON.stringify(content, null, 2);
 
     const gitManager = GitManager.getInstance(project, repo);
     const gistManager = new GistManager(gitManager);
-    const result = await gistManager.upsertFile(file, content);
+    const result = await gistManager.upsertFile(file, contentStr);
 
     return json(result, 200);
   } catch (error) {
