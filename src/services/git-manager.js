@@ -2,6 +2,7 @@ import simpleGit from 'simple-git';
 import path from 'path';
 import fs from 'fs';
 import logger from '../api/middleware/logger.js';
+import { startTask, endTask } from './task-tracker.js';
 
 const BASE_DIR = './cloned-repos';
 const registry = new Map();
@@ -41,6 +42,10 @@ class GitManager {
       registry.set(key, new GitManager(project, repo));
     }
     return registry.get(key);
+  }
+
+  static getAll() {
+    return [...registry.values()];
   }
 
   buildSshUrl() {
@@ -97,21 +102,28 @@ class GitManager {
   }
 
   async writeFile(filePath, content, message) {
-    return withLock(`${this.project}/${this.repo}`, async () => {
-      await this._init();
-      const fullPath = path.join(this.repoPath, filePath);
-      fs.mkdirSync(path.dirname(fullPath), { recursive: true });
-      fs.writeFileSync(fullPath, content, 'utf8');
-      await this.git.add(filePath);
-      const status = await this.git.status();
-      if (status.staged.length > 0) {
-        await this.git.commit(message);
-        this._schedulePush();
-        logger.info(`✓ Committed: ${filePath} (push scheduled)`);
-      } else {
-        logger.info(`No changes in ${filePath}`);
-      }
-    });
+    const taskId = startTask(this.project, this.repo, filePath);
+    try {
+      await withLock(`${this.project}/${this.repo}`, async () => {
+        await this._init();
+        const fullPath = path.join(this.repoPath, filePath);
+        fs.mkdirSync(path.dirname(fullPath), { recursive: true });
+        fs.writeFileSync(fullPath, content, 'utf8');
+        await this.git.add(filePath);
+        const status = await this.git.status();
+        if (status.staged.length > 0) {
+          await this.git.commit(message);
+          this._schedulePush();
+          logger.info(`✓ Committed: ${filePath} (push scheduled)`);
+        } else {
+          logger.info(`No changes in ${filePath}`);
+        }
+      });
+      endTask(taskId);
+    } catch (err) {
+      endTask(taskId, err.message);
+      throw err;
+    }
   }
 
   async flush() {

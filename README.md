@@ -9,7 +9,8 @@ Write files into Bitbucket Data Center repositories via HTTP. Every request clon
 - Per-repo lock to handle concurrent requests safely
 - `PROJECT:repo` whitelist for access control (403 if not listed)
 - SSH-based clone (no credentials embedded in URLs)
-- Docker ready with `oven/bun:1-alpine`
+- Web dashboard (React 19 + GNOME UI) served on the same port as the API
+- Docker multi-stage build — UI compiled at image build time
 - Bun native server — no Express
 
 ## Requirements
@@ -59,6 +60,8 @@ If `ALLOWED_REPOS` is empty or not set, **all requests return 403**.
 docker-compose up -d
 ```
 
+Open **[http://localhost:3000](http://localhost:3000)** — the web dashboard and the API run on the same port.
+
 ### Docker
 
 ```bash
@@ -72,11 +75,26 @@ docker run -p 3000:3000 \
   bitbucket-gist
 ```
 
-### Bun (local)
+Open **[http://localhost:3000](http://localhost:3000)** after the container starts.
+
+### Bun (local — API + UI separately)
 
 ```bash
+# Terminal 1 — API server
 bun install
 bun run dev
+
+# Terminal 2 — UI dev server with HMR (proxies /api to :3000)
+bun run ui:dev
+```
+
+Open **[http://localhost:5173](http://localhost:5173)** for the UI in dev mode.
+
+To build and serve the UI through the API server:
+
+```bash
+bun run ui:build   # compiles ui/ → ui/dist/
+bun run dev        # serves API + UI on :3000
 ```
 
 ## API
