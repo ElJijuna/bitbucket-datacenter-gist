@@ -7,6 +7,9 @@ const BASE_DIR = './cloned-repos';
 const registry = new Map();
 const locks = new Map();
 
+const PULL_INTERVAL_MS = parseInt(process.env.GIT_PULL_INTERVAL ?? '30', 10) * 1000;
+const PUSH_DEBOUNCE_MS = parseInt(process.env.GIT_PUSH_DEBOUNCE ?? '500', 10);
+
 async function withLock(key, fn) {
   const prev = locks.get(key) ?? Promise.resolve();
   let release;
@@ -28,6 +31,8 @@ class GitManager {
     this.repoPath = path.join(BASE_DIR, project, repo);
     this.git = null;
     this.ready = false;
+    this.lastPulledAt = 0;
+    this.pushTimer = null;
   }
 
   static getInstance(project, repo) {
@@ -45,21 +50,17 @@ class GitManager {
   }
 
   async _init() {
-    if (this.ready) {
-      await this._pull();
-      return;
+    if (!this.ready) {
+      if (!fs.existsSync(this.repoPath)) {
+        logger.info(`Cloning ${this.project}/${this.repo}...`);
+        fs.mkdirSync(path.dirname(this.repoPath), { recursive: true });
+        await simpleGit().clone(this.buildSshUrl(), this.repoPath);
+        logger.info(`✓ Cloned ${this.project}/${this.repo}`);
+      }
+      this.git = simpleGit(this.repoPath);
+      await this._configureUser();
+      this.ready = true;
     }
-
-    if (!fs.existsSync(this.repoPath)) {
-      logger.info(`Cloning ${this.project}/${this.repo}...`);
-      fs.mkdirSync(path.dirname(this.repoPath), { recursive: true });
-      await simpleGit().clone(this.buildSshUrl(), this.repoPath);
-      logger.info(`✓ Cloned ${this.project}/${this.repo}`);
-    }
-
-    this.git = simpleGit(this.repoPath);
-    await this._configureUser();
-    this.ready = true;
     await this._pull();
   }
 
@@ -71,11 +72,28 @@ class GitManager {
   }
 
   async _pull() {
+    if (Date.now() - this.lastPulledAt < PULL_INTERVAL_MS) return;
     try {
-      if (this.git) await this.git.pull();
+      await this.git.pull();
+      this.lastPulledAt = Date.now();
     } catch (err) {
       logger.warn(`Pull warning for ${this.project}/${this.repo}: ${err.message}`);
     }
+  }
+
+  _schedulePush() {
+    if (this.pushTimer) clearTimeout(this.pushTimer);
+    this.pushTimer = setTimeout(async () => {
+      this.pushTimer = null;
+      try {
+        await withLock(`${this.project}/${this.repo}`, async () => {
+          await this.git.push();
+          logger.info(`✓ Push: ${this.project}/${this.repo}`);
+        });
+      } catch (err) {
+        logger.error({ err }, `Push failed for ${this.project}/${this.repo}`);
+      }
+    }, PUSH_DEBOUNCE_MS);
   }
 
   async writeFile(filePath, content, message) {
@@ -88,11 +106,23 @@ class GitManager {
       const status = await this.git.status();
       if (status.staged.length > 0) {
         await this.git.commit(message);
-        await this.git.push();
-        logger.info(`✓ Pushed: ${filePath}`);
+        this._schedulePush();
+        logger.info(`✓ Committed: ${filePath} (push scheduled)`);
       } else {
         logger.info(`No changes in ${filePath}`);
       }
+    });
+  }
+
+  async flush() {
+    if (this.pushTimer) {
+      clearTimeout(this.pushTimer);
+      this.pushTimer = null;
+    }
+    return withLock(`${this.project}/${this.repo}`, async () => {
+      if (!this.git) throw new Error('Repository not initialized');
+      await this.git.push();
+      logger.info(`✓ Flushed: ${this.project}/${this.repo}`);
     });
   }
 
@@ -104,17 +134,14 @@ class GitManager {
   }
 
   async pull() {
+    this.lastPulledAt = 0;
     return withLock(`${this.project}/${this.repo}`, async () => {
       await this._init();
     });
   }
 
   async push() {
-    return withLock(`${this.project}/${this.repo}`, async () => {
-      if (!this.git) throw new Error('Repository not initialized');
-      await this.git.push();
-      logger.info(`✓ Pushed ${this.project}/${this.repo}`);
-    });
+    return this.flush();
   }
 
   async getLog(maxCount = 10) {
