@@ -1,6 +1,6 @@
 {
     "name": "bitbucket-datacenter-gist",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "description": "GitHub Gist-like application for Bitbucket Data Center",
     "type": "module",
     "main": "src/index.js",
