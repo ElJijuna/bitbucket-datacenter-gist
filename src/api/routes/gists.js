@@ -14,13 +14,17 @@ function json(body, status) {
 }
 
 export default async function gistRoutes(request) {
-  const { pathname } = new URL(request.url);
-  const match = pathname.match(ROUTE_RE);
+  const url = new URL(request.url);
+  const match = url.pathname.match(ROUTE_RE);
 
   if (!match) return null;
-  if (request.method !== 'POST') return json({ error: 'Method Not Allowed' }, 405);
 
   const [, project, repo, file] = match;
+  const { method } = request;
+
+  if (!['GET', 'POST', 'PUT', 'DELETE'].includes(method)) {
+    return json({ error: 'Method Not Allowed' }, 405);
+  }
 
   if (!SAFE_FILE_RE.test(file)) {
     return json({ error: 'Invalid file name' }, 400);
@@ -31,21 +35,45 @@ export default async function gistRoutes(request) {
     return json({ error: 'Repository not allowed' }, 403);
   }
 
-  try {
-    const body = await request.json();
-    const { content } = body;
+  const gitManager = GitManager.getInstance(project, repo);
+  const gistManager = new GistManager(gitManager);
 
+  try {
+    if (method === 'GET') {
+      const branch = url.searchParams.get('branch');
+      if (!branch) return json({ error: 'branch query param is required' }, 400);
+
+      const result = await gistManager.readFile(file, branch);
+      if (!result) return json({ error: 'File not found' }, 404);
+      return json(result, 200);
+    }
+
+    if (method === 'DELETE') {
+      const branch = url.searchParams.get('branch');
+      if (!branch) return json({ error: 'branch query param is required' }, 400);
+
+      const result = await gistManager.deleteFile(file, branch);
+      return json(result, 200);
+    }
+
+    // POST and PUT — branch and content come from body
+    const body = await request.json();
+    const { branch, content } = body;
+
+    if (!branch) return json({ error: 'branch is required' }, 400);
     if (content === undefined || content === null) return json({ error: 'content is required' }, 400);
 
-    const contentStr = typeof content === 'string' ? content : JSON.stringify(content, null, 2);
+    if (method === 'POST') {
+      const result = await gistManager.createFile(file, content, branch);
+      return json(result, 201);
+    }
 
-    const gitManager = GitManager.getInstance(project, repo);
-    const gistManager = new GistManager(gitManager);
-    const result = await gistManager.upsertFile(file, contentStr);
-
-    return json(result, 200);
+    if (method === 'PUT') {
+      const result = await gistManager.updateFile(file, content, branch);
+      return json(result, 200);
+    }
   } catch (error) {
     logger.error('Gist route error', error);
-    return json({ error: error.message }, 500);
+    return json({ error: error.message }, error.status ?? 500);
   }
 }

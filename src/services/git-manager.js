@@ -96,6 +96,16 @@ class GitManager {
     }
   }
 
+  async _checkoutBranch(branch) {
+    await this.git.fetch('origin');
+    try {
+      await this.git.checkout(branch);
+      await this.git.pull('origin', branch);
+    } catch {
+      await this.git.checkoutBranch(branch, `origin/${branch}`);
+    }
+  }
+
   _schedulePush() {
     if (this.pushTimer) clearTimeout(this.pushTimer);
     this.pushTimer = setTimeout(async () => {
@@ -111,11 +121,25 @@ class GitManager {
     }, PUSH_DEBOUNCE_MS);
   }
 
-  async writeFile(filePath, content, message) {
+  // Reads file content from a specific branch using git-show (no checkout needed).
+  // Returns null if the file does not exist on that branch.
+  async readFile(filePath, branch) {
+    return withLock(`${this.project}/${this.repo}`, async () => {
+      await this._init();
+      try {
+        return await this.git.show([`${branch}:${filePath}`]);
+      } catch {
+        return null;
+      }
+    });
+  }
+
+  async writeFile(filePath, content, message, branch = null) {
     const taskId = startTask(this.project, this.repo, filePath);
     try {
       await withLock(`${this.project}/${this.repo}`, async () => {
         await this._init();
+        if (branch) await this._checkoutBranch(branch);
         const fullPath = path.join(this.repoPath, filePath);
         fs.mkdirSync(path.dirname(fullPath), { recursive: true });
         fs.writeFileSync(fullPath, content, 'utf8');
@@ -123,10 +147,38 @@ class GitManager {
         const status = await this.git.status();
         if (status.staged.length > 0) {
           await this.git.commit(message);
-          this._schedulePush();
-          logger.info(`✓ Committed: ${filePath} (push scheduled)`);
+          if (branch) {
+            await this.git.push('origin', branch);
+            logger.info(`✓ Committed & pushed: ${filePath} → ${branch}`);
+          } else {
+            this._schedulePush();
+            logger.info(`✓ Committed: ${filePath} (push scheduled)`);
+          }
         } else {
           logger.info(`No changes in ${filePath}`);
+        }
+      });
+      endTask(taskId);
+    } catch (err) {
+      endTask(taskId, err.message);
+      throw err;
+    }
+  }
+
+  async deleteFile(filePath, message, branch = null) {
+    const taskId = startTask(this.project, this.repo, filePath);
+    try {
+      await withLock(`${this.project}/${this.repo}`, async () => {
+        await this._init();
+        if (branch) await this._checkoutBranch(branch);
+        await this.git.rm(filePath);
+        await this.git.commit(message);
+        if (branch) {
+          await this.git.push('origin', branch);
+          logger.info(`✓ Deleted & pushed: ${filePath} → ${branch}`);
+        } else {
+          this._schedulePush();
+          logger.info(`✓ Deleted: ${filePath} (push scheduled)`);
         }
       });
       endTask(taskId);
