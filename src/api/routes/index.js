@@ -9,13 +9,13 @@ export default async function router(request) {
 
   if (pathname.startsWith('/health')) return healthRoutes(request);
 
-  if (pathname.startsWith('/api/projects/')) {
+  if (pathname === '/api/repos' || pathname === '/api/tasks') return statusRoutes(request);
+
+  if (pathname.startsWith('/api/gist/')) {
     const denied = authMiddleware(request);
     if (denied) return denied;
+    return gistRoutes(request);
   }
-
-  if (pathname === '/api/repos' || pathname === '/api/tasks') return statusRoutes(request);
-  if (pathname.startsWith('/api/projects/')) return gistRoutes(request);
   if (pathname.startsWith('/api/repository')) return repositoryRoutes(request);
 
   return null;

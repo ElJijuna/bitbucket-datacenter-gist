@@ -3,7 +3,7 @@ import GistManager from '../../services/gist-manager.js';
 import { isAllowed } from '../../config/whitelist.js';
 import logger from '../middleware/logger.js';
 
-const ROUTE_RE = /^\/api\/projects\/([^/]+)\/repos\/([^/]+)\/gists\/([^/]+)$/;
+const ROUTE_RE = /^\/api\/gist\/([^/]+)\/([^/]+)\/([^/]+)$/;
 const SAFE_FILE_RE = /^[a-zA-Z0-9._-]+$/;
 
 function json(body, status) {

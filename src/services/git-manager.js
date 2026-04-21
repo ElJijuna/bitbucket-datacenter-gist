@@ -69,7 +69,7 @@ class GitManager {
       if (!fs.existsSync(this.repoPath)) {
         logger.info(`Cloning ${this.project}/${this.repo}...`);
         fs.mkdirSync(path.dirname(this.repoPath), { recursive: true });
-        await simpleGit().clone(this.buildRepoUrl(), this.repoPath);
+        await simpleGit().clone(this.buildRepoUrl(), this.repoPath, { '--filter': 'blob:none', '--depth': '1' });
         logger.info(`✓ Cloned ${this.project}/${this.repo}`);
       }
       this.git = simpleGit(this.repoPath);
@@ -102,7 +102,14 @@ class GitManager {
       await this.git.checkout(branch);
       await this.git.pull('origin', branch);
     } catch {
-      await this.git.checkoutBranch(branch, `origin/${branch}`);
+      try {
+        // Branch exists on remote but not locally
+        await this.git.checkoutBranch(branch, `origin/${branch}`);
+      } catch {
+        // Branch doesn't exist anywhere — create orphan (no prior history, no files)
+        await this.git.raw(['checkout', '--orphan', branch]);
+        await this.git.raw(['rm', '-rf', '.']);
+      }
     }
   }
 
