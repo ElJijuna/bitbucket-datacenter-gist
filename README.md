@@ -1,45 +1,76 @@
 # Bitbucket DataCenter Gist Manager
 
-Write files into Bitbucket Data Center repositories via HTTP. Every request clones (or pulls) the target repo, writes the file, commits, and pushes — all automatically.
+[![Docker Hub](https://img.shields.io/docker/v/pilmee/bitbucket-datacenter-gist?label=docker%20hub&logo=docker&logoColor=white)](https://hub.docker.com/r/pilmee/bitbucket-datacenter-gist)
+[![Docker Pulls](https://img.shields.io/docker/pulls/pilmee/bitbucket-datacenter-gist?logo=docker&logoColor=white)](https://hub.docker.com/r/pilmee/bitbucket-datacenter-gist)
+[![GitHub release](https://img.shields.io/github/v/release/ElJijuna/bitbucket-datacenter-gist?logo=github)](https://github.com/ElJijuna/bitbucket-datacenter-gist/releases)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Bun](https://img.shields.io/badge/runtime-bun-black?logo=bun)](https://bun.sh)
+
+HTTP API to create, read, update and delete files inside Bitbucket Data Center repositories. Every write request clones (or pulls) the target repo, writes the file, commits, and pushes — all automatically.
 
 ## Features
 
-- Single endpoint to upsert any file in any whitelisted repository
-- Clone-once strategy: repos are cached locally and pulled on each request
-- Per-repo lock to handle concurrent requests safely
-- `PROJECT:repo` whitelist for access control (403 if not listed)
-- SSH-based clone (no credentials embedded in URLs)
-- Web dashboard (React 19 + GNOME UI) served on the same port as the API
-- Docker multi-stage build — UI compiled at image build time
+- CRUD endpoints (`GET` / `POST` / `PUT` / `DELETE`) per file and branch
+- `branch` is part of every request — target any existing or new branch
+- Orphan branch auto-creation when the branch does not yet exist in the remote
+- Blobless clone (`--filter=blob:none`) — only downloads file content on demand
+- Clone-once, pull-on-request — repos are cached locally under `cloned-repos/`
+- Per-repo lock — concurrent requests for the same repo are serialized safely
+- `PROJECT:repo` whitelist — returns `403` for anything not explicitly allowed
+- Optional API key protection (`X-API-Key` / `Authorization: Bearer`)
+- SSH and HTTPS clone support
+- Web dashboard (React 19 + GNOME UI) on the same port as the API
+- Docker multi-stage build, multi-arch (`linux/amd64`, `linux/arm64`)
 - Bun native server — no Express
+
+## Quick start
+
+```bash
+# Pull from Docker Hub
+docker pull pilmee/bitbucket-datacenter-gist
+
+# Run with SSH clone (default)
+docker run -d -p 3000:3000 \
+  -v ~/.ssh:/root/.ssh:ro \
+  -e BITBUCKET_SERVER_HOST=https://bitbucket.example.com \
+  -e BITBUCKET_USER=your-user \
+  -e ALLOWED_REPOS=MYPROJECT:snippets,TOOLS:utils \
+  pilmee/bitbucket-datacenter-gist
+```
+
+Open **[http://localhost:3000](http://localhost:3000)** — the web dashboard and the API run on the same port.
 
 ## Requirements
 
 - Docker (recommended) or Bun >= 1.0.0
-- SSH key configured with access to Bitbucket Server / Data Center
-- Git (included in the Docker image)
+- SSH key with read/write access to the Bitbucket repos (SSH mode)
+- Bitbucket API token (HTTPS mode)
 
 ## Configuration
 
 ```bash
 cp .env.example .env
+# edit .env with your values
 ```
 
 ### Environment variables
 
-| Variable | Required | Description |
-| -------- | -------- | ----------- |
-| `BITBUCKET_SERVER_HOST` | Yes | Bitbucket base URL (e.g. `https://bitbucket.example.com`) |
-| `BITBUCKET_USER` | Yes | Bitbucket username (used for git commit author) |
-| `ALLOWED_REPOS` | Yes | Whitelisted repos — see format below |
-| `GIT_CLONE_PROTOCOL` | No | `ssh` (default) or `https` |
-| `BITBUCKET_SSH_PORT` | No | SSH port (default: `7999`) — only used when `GIT_CLONE_PROTOCOL=ssh` |
-| `BITBUCKET_TOKEN` | No | API token — required when `GIT_CLONE_PROTOCOL=https` |
-| `BITBUCKET_API_HOST` | No | REST API URL — required only for `/api/repository/*` routes |
-| `GIT_USER_NAME` | No | Commit author name (default: `BITBUCKET_USER`) |
-| `GIT_USER_EMAIL` | No | Commit author email (default: `BITBUCKET_USER@bitbucket-gist`) |
-| `PORT` | No | Server port (default: `3000`) |
-| `LOG_LEVEL` | No | `error` / `warn` / `info` / `debug` (default: `info`) |
+| Variable | Required | Default | Description |
+| -------- | :------: | ------- | ----------- |
+| `BITBUCKET_SERVER_HOST` | Yes | — | Bitbucket base URL (e.g. `https://bitbucket.example.com`) |
+| `BITBUCKET_USER` | Yes | — | Bitbucket username (used for git commit author) |
+| `ALLOWED_REPOS` | Yes | — | Whitelisted repos — see format below |
+| `GIT_CLONE_PROTOCOL` | No | `ssh` | `ssh` or `https` |
+| `BITBUCKET_SSH_PORT` | No | `7999` | SSH port — only used when `GIT_CLONE_PROTOCOL=ssh` |
+| `BITBUCKET_TOKEN` | No | — | API token — required when `GIT_CLONE_PROTOCOL=https` |
+| `BITBUCKET_API_HOST` | No | — | REST API base URL — required for `/api/repository/*` routes |
+| `GIT_USER_NAME` | No | `BITBUCKET_USER` | Commit author name |
+| `GIT_USER_EMAIL` | No | `BITBUCKET_USER@bitbucket-gist` | Commit author email |
+| `API_SECRET_KEY` | No | — | When set, all `/api/gist/*` requests must include this key |
+| `GIT_PULL_INTERVAL` | No | `30` | Seconds between pulls per repo |
+| `GIT_PUSH_DEBOUNCE` | No | `500` | Milliseconds to wait before pushing (coalesces rapid writes) |
+| `PORT` | No | `3000` | Server port |
+| `LOG_LEVEL` | No | `info` | `error` / `warn` / `info` / `debug` |
 
 ### Repository whitelist
 
@@ -51,91 +82,119 @@ ALLOWED_REPOS=MYPROJECT:repo1,MYPROJECT:repo2,TOOLS:repotools
 
 If `ALLOWED_REPOS` is empty or not set, **all requests return 403**.
 
-## Usage
+## Installation
 
-### Docker Compose (recommended)
-
-```bash
-docker-compose up -d
-```
-
-Open **[http://localhost:3000](http://localhost:3000)** — the web dashboard and the API run on the same port.
-
-### Docker
+### Docker Hub (recommended)
 
 ```bash
-docker build -t bitbucket-gist .
-
-docker run -p 3000:3000 \
+docker run -d -p 3000:3000 \
   -v ~/.ssh:/root/.ssh:ro \
   -e BITBUCKET_SERVER_HOST=https://bitbucket.example.com \
   -e BITBUCKET_USER=your-user \
-  -e ALLOWED_REPOS=MYPROJECT:snippets,TOOLS:utils \
+  -e ALLOWED_REPOS=MYPROJECT:snippets \
+  -e API_SECRET_KEY=change-me \
+  pilmee/bitbucket-datacenter-gist
+```
+
+Available tags: `latest`, `edge` (main branch), `0.2.0`, `0.2`, `0` and short SHA tags.
+
+### Docker Compose
+
+```bash
+cp .env.example .env   # fill in your values
+docker-compose up -d
+```
+
+### Build from source
+
+```bash
+git clone https://github.com/ElJijuna/bitbucket-datacenter-gist.git
+cd bitbucket-datacenter-gist
+docker build -t bitbucket-gist .
+docker run -d -p 3000:3000 \
+  -v ~/.ssh:/root/.ssh:ro \
+  --env-file .env \
   bitbucket-gist
 ```
 
-Open **[http://localhost:3000](http://localhost:3000)** after the container starts.
-
-### Bun (local — API + UI separately)
+### Bun (local development)
 
 ```bash
-# Terminal 1 — API server
 bun install
+
+# Terminal 1 — API server (hot reload)
 bun run dev
 
 # Terminal 2 — UI dev server with HMR (proxies /api to :3000)
 bun run ui:dev
 ```
 
-Open **[http://localhost:5173](http://localhost:5173)** for the UI in dev mode.
-
-To build and serve the UI through the API server:
-
-```bash
-bun run ui:build   # compiles ui/ → ui/dist/
-bun run dev        # serves API + UI on :3000
-```
+Open **[http://localhost:5173](http://localhost:5173)** for the UI in dev mode, or run `bun run ui:build && bun run dev` to serve everything on `:3000`.
 
 ## API
 
+### Authentication
+
+When `API_SECRET_KEY` is set, all `/api/gist/*` requests must include the key:
+
+```http
+X-API-Key: your-secret
+```
+
+or
+
+```http
+Authorization: Bearer your-secret
+```
+
+Status routes (`/api/repos`, `/api/tasks`) and the health check do not require authentication.
+
 ### Health check
 
-```text
+```http
 GET /health
 ```
 
-### Write a file
+### Gist CRUD
 
-```text
-POST /api/projects/:project/repos/:repo/gists/:file
-```
+Base: `/api/gist/:project/:repo/:file`
 
-**Body:**
+| Method | Endpoint | Body / Query | Description |
+| ------ | -------- | ------------ | ----------- |
+| `GET` | `/api/gist/:project/:repo/:file` | `?branch=<b>` | Read file content |
+| `POST` | `/api/gist/:project/:repo/:file` | `{ branch, content }` | Create file — fails `409` if it exists |
+| `PUT` | `/api/gist/:project/:repo/:file` | `{ branch, content }` | Update file — fails `404` if not found |
+| `DELETE` | `/api/gist/:project/:repo/:file` | `?branch=<b>` | Delete file |
 
-```json
-{ "content": "file content here" }
-```
+`content` can be a **string** or any **JSON value** (objects/arrays are serialized automatically).
 
-**Response `200`:**
+> **Branch auto-creation:** if `branch` does not exist in the remote, it is created as an orphan branch (no prior history) containing only the file being written.
 
-```json
-{ "file": "app-report.json", "updatedAt": "2026-04-20T10:00:00.000Z" }
-```
+#### Responses
 
-**Error responses:**
+| Method | Success | Body |
+| ------ | ------- | ---- |
+| `GET` | `200` | `{ file, branch, content }` |
+| `POST` | `201` | `{ file, branch, createdAt }` |
+| `PUT` | `200` | `{ file, branch, updatedAt }` |
+| `DELETE` | `200` | `{ file, branch, deletedAt }` |
+
+#### Error codes
 
 | Status | Reason |
 | ------ | ------ |
-| `400` | Missing `content` or invalid file name |
+| `400` | Missing `branch`, `content`, or invalid file name |
+| `401` | Missing or invalid `API_SECRET_KEY` |
 | `403` | `PROJECT/repo` not in whitelist |
-| `405` | Method not `POST` |
+| `404` | File not found (GET / PUT / DELETE) |
+| `409` | File already exists (POST) |
 | `500` | Git clone / push failure |
 
 ### Repository utilities *(optional)*
 
-These routes require `BITBUCKET_PROJECT`, `BITBUCKET_REPOSITORY`, `BITBUCKET_TOKEN` and `BITBUCKET_API_HOST` to be set.
+Require `BITBUCKET_TOKEN` and `BITBUCKET_API_HOST`.
 
-```text
+```http
 GET  /api/repository/status
 POST /api/repository/pull
 POST /api/repository/push
@@ -145,18 +204,79 @@ GET  /api/repository/commits
 
 ## Examples
 
+Replace `your-secret`, `PROJ`, `my-repo`, and the host with your actual values.
+
+### Create a file
+
 ```bash
-# Write a JSON report into PROJ/reportes
-curl -X POST http://localhost:3000/api/projects/PROJ/repos/reportes/gists/app-report.json \
+curl -X POST http://localhost:3000/api/gist/PROJ/my-repo/report.json \
   -H "Content-Type: application/json" \
-  -d '{"content": "{\"status\": \"ok\", \"ts\": \"2026-04-20\"}"}'
+  -H "X-API-Key: your-secret" \
+  -d '{"branch": "main", "content": "{\"status\": \"ok\", \"ts\": \"2026-04-21\"}"}'
+```
 
-# Write a shell script into TOOLS/utils
-curl -X POST http://localhost:3000/api/projects/TOOLS/repos/utils/gists/deploy.sh \
+```json
+{ "file": "report.json", "branch": "main", "createdAt": "2026-04-21T10:00:00.000Z" }
+```
+
+### Read a file
+
+```bash
+curl "http://localhost:3000/api/gist/PROJ/my-repo/report.json?branch=main" \
+  -H "X-API-Key: your-secret"
+```
+
+```json
+{ "file": "report.json", "branch": "main", "content": "{\"status\": \"ok\", \"ts\": \"2026-04-21\"}" }
+```
+
+### Update a file
+
+```bash
+curl -X PUT http://localhost:3000/api/gist/PROJ/my-repo/report.json \
   -H "Content-Type: application/json" \
-  -d '{"content": "#!/bin/bash\necho deployed"}'
+  -H "X-API-Key: your-secret" \
+  -d '{"branch": "main", "content": "{\"status\": \"degraded\", \"ts\": \"2026-04-21\"}"}'
+```
 
-# Health check
+```json
+{ "file": "report.json", "branch": "main", "updatedAt": "2026-04-21T10:05:00.000Z" }
+```
+
+### Write a JSON object directly (no manual serialization)
+
+```bash
+curl -X PUT http://localhost:3000/api/gist/PROJ/my-repo/config.json \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-secret" \
+  -d '{"branch": "main", "content": {"env": "prod", "replicas": 3}}'
+```
+
+### Create on a new (non-existent) branch
+
+The branch is created automatically as an orphan with only this file.
+
+```bash
+curl -X POST http://localhost:3000/api/gist/PROJ/my-repo/init.json \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-secret" \
+  -d '{"branch": "reports/2026-04", "content": "{}"}'
+```
+
+### Delete a file
+
+```bash
+curl -X DELETE "http://localhost:3000/api/gist/PROJ/my-repo/report.json?branch=main" \
+  -H "X-API-Key: your-secret"
+```
+
+```json
+{ "file": "report.json", "branch": "main", "deletedAt": "2026-04-21T10:10:00.000Z" }
+```
+
+### Check health
+
+```bash
 curl http://localhost:3000/health
 ```
 
@@ -167,7 +287,7 @@ Repos are cached under `cloned-repos/` namespaced by project key:
 ```text
 cloned-repos/
 ├── PROJ/
-│   └── reportes/
+│   └── my-repo/
 └── TOOLS/
     └── utils/
 ```
@@ -179,16 +299,19 @@ src/
 ├── api/
 │   ├── server.js              # Bun native server + env validation
 │   ├── middleware/
-│   │   ├── logger.js
+│   │   ├── auth.js            # X-API-Key / Bearer token guard
+│   │   ├── logger.js          # Pino structured logging
 │   │   └── error-handler.js
 │   └── routes/
 │       ├── index.js           # Main router
 │       ├── health.js
-│       ├── gists.js           # POST /api/projects/:project/repos/:repo/gists/:file
-│       └── repository.js      # /api/repository/* utility routes
+│       ├── gists.js           # CRUD /api/gist/:project/:repo/:file
+│       ├── repository.js      # /api/repository/* utility routes
+│       └── status.js          # /api/repos, /api/tasks
 ├── services/
-│   ├── git-manager.js         # Clone-once, per-repo lock, SSH, commit, push
-│   └── gist-manager.js        # upsertFile wrapper
+│   ├── git-manager.js         # Blobless clone, per-repo lock, branch, commit, push
+│   ├── gist-manager.js        # CRUD logic on top of git-manager
+│   └── task-tracker.js        # In-flight task registry
 └── config/
     ├── whitelist.js           # PROJECT:repo access control
     └── bitbucket-client.js    # Bitbucket REST API client
@@ -196,19 +319,25 @@ src/
 
 ## Troubleshooting
 
+**`401 Unauthorized`**
+
+- Check that `X-API-Key` or `Authorization: Bearer` matches the value of `API_SECRET_KEY`
+
 **`403 Forbidden`**
 
-- Verify `ALLOWED_REPOS` includes the `PROJECT:repo` you are calling (case-insensitive)
+- Verify `ALLOWED_REPOS` includes `PROJECT:repo` (case-insensitive, colon-separated)
 
 **`Failed to clone repository`**
 
-- Check the SSH key mounted in the container has read access to the repo in Bitbucket
-- Verify `BITBUCKET_SSH_PORT` matches your Bitbucket instance (default `7999`)
+- SSH mode: confirm the key at `~/.ssh` has read access to the repo in Bitbucket
+- SSH mode: verify `BITBUCKET_SSH_PORT` matches your instance (default `7999`)
+- HTTPS mode: confirm `BITBUCKET_TOKEN` is set and has repo read/write scope
 - Confirm `BITBUCKET_SERVER_HOST` has no trailing slash
 
 **`Failed to push changes`**
 
-- Verify the SSH key has write access to the repository
+- SSH mode: verify the SSH key has **write** access to the repository
+- HTTPS mode: verify `BITBUCKET_TOKEN` has write scope
 
 ## License
 
