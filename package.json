@@ -10,7 +10,8 @@
         "test": "bun test",
         "lint": "eslint src/",
         "lint:fix": "eslint src/ --fix",
-        "ui:dev": "vite --config vite.config.js",
+        "ui:dev": "MOCK=false vite --config vite.config.js",
+        "ui:dev:mock": "vite --config vite.config.js",
         "ui:build": "vite build --config vite.config.js",
         "ui:routes": "intent generate --config vite.config.js"
     },

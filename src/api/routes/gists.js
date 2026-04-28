@@ -41,27 +41,39 @@ export default async function gistRoutes(request) {
   try {
     if (method === 'GET') {
       const branch = url.searchParams.get('branch');
-      if (!branch) return json({ error: 'branch query param is required' }, 400);
+      if (!branch) {
+        return json({ error: 'branch query param is required' }, 400);
+      }
 
       const result = await gistManager.readFile(file, branch);
-      if (!result) return json({ error: 'File not found' }, 404);
+
+      if (!result) {
+        return json({ error: 'File not found' }, 404);
+      }
+
       return json(result, 200);
     }
 
     if (method === 'DELETE') {
       const branch = url.searchParams.get('branch');
-      if (!branch) return json({ error: 'branch query param is required' }, 400);
+      if (!branch) {
+        return json({ error: 'branch query param is required' }, 400);
+      }
 
       const result = await gistManager.deleteFile(file, branch);
       return json(result, 200);
     }
 
-    // POST and PUT — branch and content come from body
     const body = await request.json();
     const { branch, content } = body;
 
-    if (!branch) return json({ error: 'branch is required' }, 400);
-    if (content === undefined || content === null) return json({ error: 'content is required' }, 400);
+    if (!branch) {
+      return json({ error: 'branch is required' }, 400);
+    }
+
+    if (content === undefined || content === null) {
+      return json({ error: 'content is required' }, 400);
+    }
 
     if (method === 'POST') {
       const result = await gistManager.createFile(file, content, branch);
@@ -74,6 +86,7 @@ export default async function gistRoutes(request) {
     }
   } catch (error) {
     logger.error('Gist route error', error);
+
     return json({ error: error.message }, error.status ?? 500);
   }
 }
