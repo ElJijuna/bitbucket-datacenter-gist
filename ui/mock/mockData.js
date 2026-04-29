@@ -42,6 +42,16 @@ function buildTasks() {
   };
 }
 
+function buildQueue() {
+  const { waiting } = readJson('queue.json');
+  return {
+    waiting: waiting.map(({ queuedAtOffset, ...item }) => ({
+      ...item,
+      queuedAt: ago(queuedAtOffset),
+    })),
+  };
+}
+
 function buildGist(project, repo, file, branch) {
   const content = readGistFile(file) ?? readGistFile('config.json');
   return {
@@ -72,6 +82,11 @@ export default [
     url: '/api/tasks',
     method: 'GET',
     response: () => buildTasks(),
+  },
+  {
+    url: '/api/queue',
+    method: 'GET',
+    response: () => buildQueue(),
   },
   {
     match: req => req.method === 'GET' && req.url.startsWith('/api/gist/'),

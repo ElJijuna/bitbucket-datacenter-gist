@@ -1,0 +1,20 @@
+{
+  "waiting": [
+    {
+      "id": "q-1",
+      "project": "MYPROJECT",
+      "repo": "backend-api",
+      "file": "config.json",
+      "method": "PUT",
+      "queuedAtOffset": 8000
+    },
+    {
+      "id": "q-2",
+      "project": "MYPROJECT",
+      "repo": "backend-api",
+      "file": "settings.json",
+      "method": "POST",
+      "queuedAtOffset": 3000
+    }
+  ]
+}
