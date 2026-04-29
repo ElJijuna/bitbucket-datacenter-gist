@@ -1,0 +1,59 @@
+{
+  "repository": {
+    "slug": "my-repo",
+    "id": 1,
+    "name": "my-repo",
+    "description": "Main application repository",
+    "state": "AVAILABLE",
+    "statusMessage": "Available",
+    "forkable": true,
+    "public": false,
+    "project": {
+      "key": "PROJECT",
+      "id": 10,
+      "name": "My Project",
+      "description": "Main project",
+      "public": false,
+      "type": "NORMAL",
+      "links": {}
+    },
+    "links": {}
+  },
+  "commits": [
+    {
+      "id": "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+      "displayId": "a1b2c3d",
+      "message": "feat: add gist browser page",
+      "authorTimestamp": 1714300000000,
+      "author": { "name": "pilmee", "emailAddress": "pilmee@example.com" }
+    },
+    {
+      "id": "b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3",
+      "displayId": "b2c3d4e",
+      "message": "fix: avoid mock.module leak in gists test",
+      "authorTimestamp": 1714200000000,
+      "author": { "name": "pilmee", "emailAddress": "pilmee@example.com" }
+    },
+    {
+      "id": "c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4",
+      "displayId": "c3d4e5f",
+      "message": "feat: add per-repo write queue",
+      "authorTimestamp": 1714100000000,
+      "author": { "name": "ElJijuna", "emailAddress": "jijuna@example.com" }
+    },
+    {
+      "id": "d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5",
+      "displayId": "d4e5f6a",
+      "message": "refactor: pending change routes with depth 1 filter",
+      "authorTimestamp": 1714000000000,
+      "author": { "name": "pilmee", "emailAddress": "pilmee@example.com" }
+    },
+    {
+      "id": "e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6",
+      "displayId": "e5f6a1b",
+      "message": "chore: update docker-publish workflow",
+      "authorTimestamp": 1713900000000,
+      "author": { "name": "pilmee", "emailAddress": "pilmee@example.com" }
+    }
+  ]
+}

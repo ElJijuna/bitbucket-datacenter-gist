@@ -67,11 +67,25 @@ function buildGist(project, repo, file, branch) {
   };
 }
 
+function buildRepository() {
+  return readJson('repository.json');
+}
+
 export default [
   {
     url: '/health',
     method: 'GET',
     response: () => readJson('health.json'),
+  },
+  {
+    url: '/api/repository/info',
+    method: 'GET',
+    response: () => ({ repository: buildRepository().repository }),
+  },
+  {
+    url: '/api/repository/commits',
+    method: 'GET',
+    response: () => ({ commits: buildRepository().commits }),
   },
   {
     url: '/api/repos',
