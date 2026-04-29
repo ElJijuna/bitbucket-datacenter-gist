@@ -30,8 +30,8 @@ function Tasks() {
   const history = data?.history ?? [];
 
   return (
-    <Box orientation="vertical" spacing={4} style={{ padding: '24px', maxWidth: 720, margin: '0 auto' }}>
-      <Box orientation="horizontal" spacing={3} style={{ alignItems: 'center' }}>
+    <Box orientation="vertical" spacing={16} style={{ padding: '24px', maxWidth: 720, margin: '0 auto' }}>
+      <Box orientation="horizontal" spacing={2} justify="space-between" style={{ alignItems: 'center' }}>
         <Text variant="heading">Tasks</Text>
         <Button variant="flat" onClick={refresh}>
           <Icon icon={Refresh} />
@@ -41,7 +41,7 @@ function Tasks() {
       {loading && <Spinner />}
       {error && <StatusPage icon={Warning} title="Failed to load" description={error} compact />}
 
-      <Box orientation="vertical" spacing={2}>
+      <Box orientation="vertical" spacing={16}>
         <Text variant="title-3">Active</Text>
         {active.length === 0 ? (
           <Text variant="body" color="dim">No tasks running</Text>
@@ -65,7 +65,7 @@ function Tasks() {
         )}
       </Box>
 
-      <Box orientation="vertical" spacing={2}>
+      <Box orientation="vertical" spacing={16}>
         <Text variant="title-3">History</Text>
         {history.length === 0 ? (
           <Text variant="body" color="dim">No completed tasks yet</Text>

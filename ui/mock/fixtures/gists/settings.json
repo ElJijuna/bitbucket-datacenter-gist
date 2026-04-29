@@ -1,0 +1,28 @@
+{
+  "features": {
+    "darkMode": true,
+    "notifications": {
+      "email": true,
+      "slack": false,
+      "webhook": "https://hooks.example.com/notify"
+    },
+    "experimentalSearch": false
+  },
+  "retention": {
+    "taskHistoryDays": 30,
+    "auditLogDays": 90,
+    "maxVersionsPerFile": 50
+  },
+  "bitbucket": {
+    "baseUrl": "https://bitbucket.example.com",
+    "projectKeys": ["MYPROJECT", "TEAM", "INFRA"],
+    "cloneDepth": 1,
+    "fetchFilter": "blob:none",
+    "timeoutMs": 30000
+  },
+  "cache": {
+    "driver": "memory",
+    "ttlMs": 300000,
+    "maxItems": 1000
+  }
+}

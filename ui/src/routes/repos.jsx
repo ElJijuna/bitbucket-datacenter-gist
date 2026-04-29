@@ -20,8 +20,8 @@ function Repos() {
   const repos = data?.repos ?? [];
 
   return (
-    <Box orientation="vertical" spacing={4} style={{ padding: '24px', maxWidth: 720, margin: '0 auto' }}>
-      <Box orientation="horizontal" spacing={3} style={{ alignItems: 'center' }}>
+    <Box orientation="vertical" spacing={16} style={{ padding: '24px', maxWidth: 720, margin: '0 auto' }}>
+      <Box orientation="horizontal" spacing={3} justify="space-between" style={{ alignItems: 'center' }}>
         <Text variant="heading">Cloned Repositories</Text>
         <Button variant="flat" onClick={refresh}>
           <Icon icon={Refresh} />
