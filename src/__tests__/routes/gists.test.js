@@ -1,31 +1,20 @@
-import { describe, it, expect, mock, beforeAll } from 'bun:test';
+import { describe, it, expect, mock, beforeAll, beforeEach } from 'bun:test';
+import { _reset as resetQueue } from '../../services/queue-manager.js';
+import { _reset as resetTracker } from '../../services/task-tracker.js';
 
-// ── module mocks (must be set up before dynamic import) ──────────────────────
-const mockReadFile = mock(() => Promise.resolve('{"hello":"world"}'));
-const mockWriteFile = mock(() => Promise.resolve());
-const mockDeleteFile = mock(() => Promise.resolve());
-const mockGitInstance = {
-  readFile: mockReadFile,
-  writeFile: mockWriteFile,
-  deleteFile: mockDeleteFile,
-};
-
+// Only mock external I/O boundaries — queue-manager and task-tracker
+// are pure JS with no side effects, so we use them real + _reset().
 mock.module('../../config/whitelist.js', () => ({ isAllowed: () => true }));
 mock.module('../../api/middleware/auth.js', () => ({ authMiddleware: () => null }));
+
+const mockGit = {
+  readFile: mock(() => Promise.resolve(null)),
+  writeFile: mock(() => Promise.resolve()),
+  deleteFile: mock(() => Promise.resolve()),
+};
+
 mock.module('../../services/git-manager.js', () => ({
-  default: { getInstance: () => mockGitInstance, getAll: () => [] },
-}));
-mock.module('../../services/queue-manager.js', () => ({
-  enqueue: (_p, _r, _f, _m, fn) => fn(),
-  getWaiting: () => [],
-  _reset: () => {},
-}));
-mock.module('../../services/task-tracker.js', () => ({
-  startTask: () => 'tid',
-  endTask: () => {},
-  getActiveTasks: () => [],
-  getHistory: () => [],
-  _reset: () => {},
+  default: { getInstance: () => mockGit, getAll: () => [] },
 }));
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -37,17 +26,24 @@ function makeRequest(method, path, body) {
   });
 }
 
-async function parseJson(res) {
-  return res.json();
-}
-
-// ── tests ────────────────────────────────────────────────────────────────────
 let gistRoutes;
 
 beforeAll(async () => {
   ({ default: gistRoutes } = await import('../../api/routes/gists.js'));
 });
 
+beforeEach(() => {
+  resetQueue();
+  resetTracker();
+  mockGit.readFile.mockReset();
+  mockGit.writeFile.mockReset();
+  mockGit.deleteFile.mockReset();
+  mockGit.readFile.mockImplementation(() => Promise.resolve(null));
+  mockGit.writeFile.mockImplementation(() => Promise.resolve());
+  mockGit.deleteFile.mockImplementation(() => Promise.resolve());
+});
+
+// ── GET ───────────────────────────────────────────────────────────────────────
 describe('GET /api/gist/:project/:repo/:file', () => {
   it('returns 400 when branch query param is missing', async () => {
     const res = await gistRoutes(makeRequest('GET', '/api/gist/P/R/f.json'));
@@ -55,21 +51,21 @@ describe('GET /api/gist/:project/:repo/:file', () => {
   });
 
   it('returns 404 when file does not exist', async () => {
-    mockReadFile.mockImplementation(() => Promise.resolve(null));
+    mockGit.readFile.mockImplementation(() => Promise.resolve(null));
     const res = await gistRoutes(makeRequest('GET', '/api/gist/P/R/f.json?branch=main'));
     expect(res.status).toBe(404);
-    mockReadFile.mockImplementation(() => Promise.resolve('content'));
   });
 
   it('returns 200 with file content', async () => {
-    mockReadFile.mockImplementation(() => Promise.resolve('{"x":1}'));
+    mockGit.readFile.mockImplementation(() => Promise.resolve('{"x":1}'));
     const res = await gistRoutes(makeRequest('GET', '/api/gist/P/R/f.json?branch=main'));
     expect(res.status).toBe(200);
-    const body = await parseJson(res);
+    const body = await res.json();
     expect(body.content).toBe('{"x":1}');
   });
 });
 
+// ── POST ──────────────────────────────────────────────────────────────────────
 describe('POST /api/gist/:project/:repo/:file', () => {
   it('returns 400 when branch is missing', async () => {
     const res = await gistRoutes(makeRequest('POST', '/api/gist/P/R/f.json', { content: 'x' }));
@@ -82,16 +78,15 @@ describe('POST /api/gist/:project/:repo/:file', () => {
   });
 
   it('returns 409 when file already exists', async () => {
-    mockReadFile.mockImplementation(() => Promise.resolve('existing'));
+    mockGit.readFile.mockImplementation(() => Promise.resolve('existing'));
     const res = await gistRoutes(
       makeRequest('POST', '/api/gist/P/R/f.json', { branch: 'main', content: 'new' })
     );
     expect(res.status).toBe(409);
-    mockReadFile.mockImplementation(() => Promise.resolve(null));
   });
 
   it('returns 201 on successful create', async () => {
-    mockReadFile.mockImplementation(() => Promise.resolve(null));
+    mockGit.readFile.mockImplementation(() => Promise.resolve(null));
     const res = await gistRoutes(
       makeRequest('POST', '/api/gist/P/R/f.json', { branch: 'main', content: '{"a":1}' })
     );
@@ -99,9 +94,10 @@ describe('POST /api/gist/:project/:repo/:file', () => {
   });
 });
 
+// ── PUT ───────────────────────────────────────────────────────────────────────
 describe('PUT /api/gist/:project/:repo/:file', () => {
   it('returns 404 when file does not exist', async () => {
-    mockReadFile.mockImplementation(() => Promise.resolve(null));
+    mockGit.readFile.mockImplementation(() => Promise.resolve(null));
     const res = await gistRoutes(
       makeRequest('PUT', '/api/gist/P/R/f.json', { branch: 'main', content: 'updated' })
     );
@@ -109,7 +105,7 @@ describe('PUT /api/gist/:project/:repo/:file', () => {
   });
 
   it('returns 200 on successful update', async () => {
-    mockReadFile.mockImplementation(() => Promise.resolve('old'));
+    mockGit.readFile.mockImplementation(() => Promise.resolve('old'));
     const res = await gistRoutes(
       makeRequest('PUT', '/api/gist/P/R/f.json', { branch: 'main', content: 'new' })
     );
@@ -117,6 +113,7 @@ describe('PUT /api/gist/:project/:repo/:file', () => {
   });
 });
 
+// ── DELETE ────────────────────────────────────────────────────────────────────
 describe('DELETE /api/gist/:project/:repo/:file', () => {
   it('returns 400 when branch is missing', async () => {
     const res = await gistRoutes(makeRequest('DELETE', '/api/gist/P/R/f.json'));
@@ -124,18 +121,19 @@ describe('DELETE /api/gist/:project/:repo/:file', () => {
   });
 
   it('returns 404 when file does not exist', async () => {
-    mockReadFile.mockImplementation(() => Promise.resolve(null));
+    mockGit.readFile.mockImplementation(() => Promise.resolve(null));
     const res = await gistRoutes(makeRequest('DELETE', '/api/gist/P/R/f.json?branch=main'));
     expect(res.status).toBe(404);
   });
 
   it('returns 200 on successful delete', async () => {
-    mockReadFile.mockImplementation(() => Promise.resolve('content'));
+    mockGit.readFile.mockImplementation(() => Promise.resolve('content'));
     const res = await gistRoutes(makeRequest('DELETE', '/api/gist/P/R/f.json?branch=main'));
     expect(res.status).toBe(200);
   });
 });
 
+// ── invalid requests ──────────────────────────────────────────────────────────
 describe('invalid requests', () => {
   it('returns 400 for unsafe file names', async () => {
     // %3B = ';' — not in [a-zA-Z0-9._-], fails SAFE_FILE_RE
