@@ -1,0 +1,37 @@
+{
+  "server": {
+    "port": 3000,
+    "host": "0.0.0.0",
+    "cors": true,
+    "rateLimit": {
+      "windowMs": 60000,
+      "max": 100
+    }
+  },
+  "auth": {
+    "secret": "changeme-in-production",
+    "expiresIn": "7d",
+    "refreshExpiresIn": "30d"
+  },
+  "database": {
+    "url": "postgres://user:pass@localhost:5432/mydb",
+    "pool": {
+      "min": 2,
+      "max": 10,
+      "idleTimeoutMs": 30000
+    },
+    "migrations": {
+      "directory": "./migrations",
+      "tableName": "knex_migrations"
+    }
+  },
+  "storage": {
+    "driver": "local",
+    "basePath": "/data/gists",
+    "maxFileSizeBytes": 1048576
+  },
+  "logging": {
+    "level": "info",
+    "pretty": false
+  }
+}

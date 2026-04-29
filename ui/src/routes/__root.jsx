@@ -7,7 +7,7 @@ import {
   ViewSwitcherBar,
   useBreakpoint,
 } from '@gnome-ui/react';
-import { GoHome, Applications, Check } from '@gnome-ui/icons';
+import { GoHome, Applications, Check, Refresh } from '@gnome-ui/icons';
 
 export const Route = createRootRoute({
   component: RootLayout,
@@ -17,6 +17,7 @@ const VIEWS = [
   { to: '/', label: 'Dashboard', icon: GoHome },
   { to: '/repos', label: 'Repos', icon: Applications },
   { to: '/tasks', label: 'Tasks', icon: Check },
+  { to: '/gists', label: 'Gists', icon: Refresh },
 ];
 
 function NavItems() {

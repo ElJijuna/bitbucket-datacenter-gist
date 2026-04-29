@@ -1,5 +1,7 @@
 import GitManager from '../../services/git-manager.js';
 import GistManager from '../../services/gist-manager.js';
+import { enqueue } from '../../services/queue-manager.js';
+import { startTask, endTask } from '../../services/task-tracker.js';
 import { isAllowed } from '../../config/whitelist.js';
 import logger from '../middleware/logger.js';
 
@@ -10,6 +12,20 @@ function json(body, status) {
   return new Response(JSON.stringify(body), {
     status,
     headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+async function runTracked(project, repo, file, method, fn) {
+  return enqueue(project, repo, file, method, async () => {
+    const taskId = startTask(project, repo, file);
+    try {
+      const result = await fn();
+      endTask(taskId);
+      return result;
+    } catch (err) {
+      endTask(taskId, err.message);
+      throw err;
+    }
   });
 }
 
@@ -42,7 +58,6 @@ export default async function gistRoutes(request) {
     if (method === 'GET') {
       const branch = url.searchParams.get('branch');
       if (!branch) return json({ error: 'branch query param is required' }, 400);
-
       const result = await gistManager.readFile(file, branch);
       if (!result) return json({ error: 'File not found' }, 404);
       return json(result, 200);
@@ -51,12 +66,12 @@ export default async function gistRoutes(request) {
     if (method === 'DELETE') {
       const branch = url.searchParams.get('branch');
       if (!branch) return json({ error: 'branch query param is required' }, 400);
-
-      const result = await gistManager.deleteFile(file, branch);
+      const result = await runTracked(project, repo, file, 'DELETE', () =>
+        gistManager.deleteFile(file, branch)
+      );
       return json(result, 200);
     }
 
-    // POST and PUT — branch and content come from body
     const body = await request.json();
     const { branch, content } = body;
 
@@ -64,12 +79,16 @@ export default async function gistRoutes(request) {
     if (content === undefined || content === null) return json({ error: 'content is required' }, 400);
 
     if (method === 'POST') {
-      const result = await gistManager.createFile(file, content, branch);
+      const result = await runTracked(project, repo, file, 'POST', () =>
+        gistManager.createFile(file, content, branch)
+      );
       return json(result, 201);
     }
 
     if (method === 'PUT') {
-      const result = await gistManager.updateFile(file, content, branch);
+      const result = await runTracked(project, repo, file, 'PUT', () =>
+        gistManager.updateFile(file, content, branch)
+      );
       return json(result, 200);
     }
   } catch (error) {

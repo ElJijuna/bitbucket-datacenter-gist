@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TasksRouteImport } from './routes/tasks'
 import { Route as ReposRouteImport } from './routes/repos'
+import { Route as GistsRouteImport } from './routes/gists'
 import { Route as IndexRouteImport } from './routes/index'
 
 const TasksRoute = TasksRouteImport.update({
@@ -23,6 +24,11 @@ const ReposRoute = ReposRouteImport.update({
   path: '/repos',
   getParentRoute: () => rootRouteImport,
 })
+const GistsRoute = GistsRouteImport.update({
+  id: '/gists',
+  path: '/gists',
+  getParentRoute: () => rootRouteImport,
+})
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -31,6 +37,7 @@ const IndexRoute = IndexRouteImport.update({
 
 const rootRouteChildren = {
   IndexRoute: IndexRoute,
+  GistsRoute: GistsRoute,
   ReposRoute: ReposRoute,
   TasksRoute: TasksRoute,
 }
