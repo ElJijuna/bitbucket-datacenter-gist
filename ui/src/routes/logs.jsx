@@ -45,7 +45,7 @@ function Logs() {
   }, []);
 
   return (
-    <Box orientation="vertical" spacing={16} style={{ padding: '24px', height: '100%', boxSizing: 'border-box' }}>
+    <Box orientation="vertical" spacing={16} style={{ padding: '24px', maxWidth: 860, margin: '0 auto' }}>
       <Box orientation="horizontal" spacing={8} style={{ alignItems: 'center' }}>
         <Text variant="heading" style={{ flex: 1 }}>Logs</Text>
         <Badge variant={connected ? 'success' : 'error'}>
@@ -58,7 +58,7 @@ function Logs() {
 
       <TerminalView
         lines={lines.length > 0 ? lines : ['Waiting for events…']}
-        style={{ flex: 1, minHeight: 0 }}
+        maxLines={500}
       />
     </Box>
   );
