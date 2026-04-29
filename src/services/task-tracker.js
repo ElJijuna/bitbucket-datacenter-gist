@@ -29,3 +29,8 @@ export function getActiveTasks() {
 export function getHistory() {
   return [...history];
 }
+
+export function _reset() {
+  active.clear();
+  history.length = 0;
+}

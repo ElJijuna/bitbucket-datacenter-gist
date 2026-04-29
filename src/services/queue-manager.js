@@ -33,3 +33,8 @@ export function getWaiting() {
   for (const items of waiting.values()) result.push(...items);
   return result.sort((a, b) => new Date(a.queuedAt) - new Date(b.queuedAt));
 }
+
+export function _reset() {
+  chains.clear();
+  waiting.clear();
+}
