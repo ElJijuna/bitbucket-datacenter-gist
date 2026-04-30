@@ -2,7 +2,21 @@ import simpleGit from 'simple-git';
 import path from 'path';
 import fs from 'fs';
 import logger from '../api/middleware/logger.js';
+import { logEmitter } from './log-emitter.js';
 import { startTask, endTask } from './task-tracker.js';
+
+function makeGit(baseDir) {
+  const opts = {
+    progress({ method, stage, progress }) {
+      logEmitter.emit('log', {
+        level: 'debug',
+        message: `git ${method}: ${stage} ${progress}%`,
+        timestamp: new Date().toISOString(),
+      });
+    },
+  };
+  return baseDir ? simpleGit(baseDir, opts) : simpleGit(opts);
+}
 
 const BASE_DIR = './cloned-repos';
 const registry = new Map();
@@ -69,10 +83,10 @@ class GitManager {
       if (!fs.existsSync(this.repoPath)) {
         logger.info(`Cloning ${this.project}/${this.repo}...`);
         fs.mkdirSync(path.dirname(this.repoPath), { recursive: true });
-        await simpleGit().clone(this.buildRepoUrl(), this.repoPath, { '--filter': 'blob:none', '--depth': '1' });
+        await makeGit().clone(this.buildRepoUrl(), this.repoPath, { '--filter': 'blob:none', '--depth': '1' });
         logger.info(`✓ Cloned ${this.project}/${this.repo}`);
       }
-      this.git = simpleGit(this.repoPath);
+      this.git = makeGit(this.repoPath);
       await this._configureUser();
       this.ready = true;
     }
