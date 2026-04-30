@@ -3,9 +3,12 @@ import getBitbucketClient from '../../config/bitbucket-client.js';
 import logger from '../middleware/logger.js';
 
 function getDefaultGitManager() {
-  const project = process.env.BITBUCKET_PROJECT;
-  const repo = process.env.BITBUCKET_REPOSITORY;
-  if (!project || !repo) throw new Error('BITBUCKET_PROJECT and BITBUCKET_REPOSITORY are required for repository routes');
+  const { BITBUCKET_PROJECT: project, BITBUCKET_REPOSITORY: repo } = process.env;
+
+  if (!project || !repo) {
+    throw new Error('BITBUCKET_PROJECT and BITBUCKET_REPOSITORY are required for repository routes');
+  }
+
   return GitManager.getInstance(project, repo);
 }
 
