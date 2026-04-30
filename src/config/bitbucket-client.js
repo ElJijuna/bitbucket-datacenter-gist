@@ -1,23 +1,17 @@
-import { BitbucketClient, Security } from 'bitbucket-datacenter-api-client';
-
-export function initializeBitbucketClient() {
-    const security = new Security(
-        process.env.BITBUCKET_API_HOST,
-        process.env.BITBUCKET_USER,
-        process.env.BITBUCKET_TOKEN,
-    );
-    const client = new BitbucketClient(security);
-
-    return client;
-}
+import { BitbucketClient } from 'bitbucket-datacenter-api-client';
 
 let clientInstance = null;
 
 export function getBitbucketClient() {
-    if (!clientInstance) {
-        clientInstance = initializeBitbucketClient();
-    }
-    return clientInstance;
+  if (!clientInstance) {
+    clientInstance = new BitbucketClient({
+      apiUrl: process.env.BITBUCKET_SERVER_HOST,
+      apiPath: 'rest/api/latest',
+      user: process.env.BITBUCKET_USER,
+      token: process.env.BITBUCKET_TOKEN,
+    });
+  }
+  return clientInstance;
 }
 
 export default getBitbucketClient;

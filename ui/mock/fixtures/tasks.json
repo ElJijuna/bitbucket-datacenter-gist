@@ -1,7 +1,7 @@
 {
   "active": [
     {
-      "id": "task-1",
+      "id": "task-active-1",
       "project": "MYPROJECT",
       "repo": "backend-api",
       "file": "config.json",
@@ -10,33 +10,20 @@
     }
   ],
   "history": [
-    {
-      "id": "task-2",
-      "project": "MYPROJECT",
-      "repo": "frontend-web",
-      "file": "package.json",
-      "status": "success",
-      "startedAtOffset": 120000,
-      "finishedAtOffset": 80000
-    },
-    {
-      "id": "task-3",
-      "project": "MYPROJECT",
-      "repo": "backend-api",
-      "file": "settings.json",
-      "status": "error",
-      "error": "Repository not found",
-      "startedAtOffset": 300000,
-      "finishedAtOffset": 280000
-    },
-    {
-      "id": "task-4",
-      "project": "TEAM",
-      "repo": "shared-lib",
-      "file": "package.json",
-      "status": "success",
-      "startedAtOffset": 600000,
-      "finishedAtOffset": 550000
-    }
+    { "id": "h-1",  "project": "MYPROJECT", "repo": "backend-api",  "file": "config.json",   "status": "success", "startedAtOffset": 600000,    "finishedAtOffset": 598000 },
+    { "id": "h-2",  "project": "MYPROJECT", "repo": "frontend-web", "file": "package.json",  "status": "success", "startedAtOffset": 900000,    "finishedAtOffset": 896000 },
+    { "id": "h-3",  "project": "TEAM",      "repo": "shared-lib",   "file": "index.js",      "status": "error",   "startedAtOffset": 1200000,   "finishedAtOffset": 1199000, "error": "push rejected" },
+    { "id": "h-4",  "project": "MYPROJECT", "repo": "backend-api",  "file": "routes.js",     "status": "success", "startedAtOffset": 3700000,   "finishedAtOffset": 3697000 },
+    { "id": "h-5",  "project": "MYPROJECT", "repo": "frontend-web", "file": "app.jsx",       "status": "success", "startedAtOffset": 4000000,   "finishedAtOffset": 3996000 },
+    { "id": "h-6",  "project": "TEAM",      "repo": "shared-lib",   "file": "utils.js",      "status": "success", "startedAtOffset": 4200000,   "finishedAtOffset": 4198000 },
+    { "id": "h-7",  "project": "MYPROJECT", "repo": "backend-api",  "file": "db.js",         "status": "error",   "startedAtOffset": 7500000,   "finishedAtOffset": 7499000, "error": "timeout" },
+    { "id": "h-8",  "project": "MYPROJECT", "repo": "frontend-web", "file": "styles.css",    "status": "success", "startedAtOffset": 7800000,   "finishedAtOffset": 7796000 },
+    { "id": "h-9",  "project": "TEAM",      "repo": "shared-lib",   "file": "constants.js",  "status": "success", "startedAtOffset": 8100000,   "finishedAtOffset": 8098000 },
+    { "id": "h-10", "project": "MYPROJECT", "repo": "backend-api",  "file": "auth.js",       "status": "success", "startedAtOffset": 11000000,  "finishedAtOffset": 10997000 },
+    { "id": "h-11", "project": "MYPROJECT", "repo": "frontend-web", "file": "router.jsx",    "status": "error",   "startedAtOffset": 11400000,  "finishedAtOffset": 11399000, "error": "conflict" },
+    { "id": "h-12", "project": "MYPROJECT", "repo": "backend-api",  "file": "server.js",     "status": "success", "startedAtOffset": 14800000,  "finishedAtOffset": 14796000 },
+    { "id": "h-13", "project": "TEAM",      "repo": "shared-lib",   "file": "types.js",      "status": "success", "startedAtOffset": 15000000,  "finishedAtOffset": 14997000 },
+    { "id": "h-14", "project": "MYPROJECT", "repo": "frontend-web", "file": "hooks.js",      "status": "success", "startedAtOffset": 15300000,  "finishedAtOffset": 15297000 },
+    { "id": "h-15", "project": "MYPROJECT", "repo": "backend-api",  "file": "middleware.js", "status": "success", "startedAtOffset": 18200000,  "finishedAtOffset": 18197000 }
   ]
 }

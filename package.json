@@ -33,6 +33,7 @@
         "@gnome-ui/layout": "^1.13.0",
         "@gnome-ui/react": "^1.38.0",
         "@tanstack/react-router": "^1.168.23",
+        "bitbucket-datacenter-api-client": "^1.13.0",
         "dotenv": "^16.3.1",
         "pino": "^10.3.1",
         "pino-pretty": "^13.1.3",

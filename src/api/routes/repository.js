@@ -41,20 +41,16 @@ export default async function repositoryRoutes(request) {
 
     if (pathname === '/api/repository/info' && method === 'GET') {
       const client = getBitbucketClient();
-      const repo = await client.repositories.get({
-        project: process.env.BITBUCKET_PROJECT,
-        repo: process.env.BITBUCKET_REPOSITORY,
-      });
+      const repo = await client.project(process.env.BITBUCKET_PROJECT).repo(process.env.BITBUCKET_REPOSITORY);
       return json({ repository: repo }, 200);
     }
 
     if (pathname === '/api/repository/commits' && method === 'GET') {
       const client = getBitbucketClient();
-      const commits = await client.repositories.commits.getAll({
-        project: process.env.BITBUCKET_PROJECT,
-        repo: process.env.BITBUCKET_REPOSITORY,
-        limit: 10,
-      });
+      const { values: commits } = await client
+        .project(process.env.BITBUCKET_PROJECT)
+        .repo(process.env.BITBUCKET_REPOSITORY)
+        .commits({ limit: 10 });
       return json({ commits }, 200);
     }
 

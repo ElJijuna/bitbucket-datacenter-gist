@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { Box, Text, Badge, Spinner, StatusPage, Button, Icon } from '@gnome-ui/react';
 import { PanelCard } from '@gnome-ui/layout';
 import { Check, Error, Warning, Refresh } from '@gnome-ui/icons';
+import { PieChart, BarChart, LineChart } from '@gnome-ui/charts';
 import { useApi } from '../hooks/useApi';
 
 export const Route = createFileRoute('/')({
@@ -15,6 +16,35 @@ function AppStatusBadge({ status }) {
   return <Badge variant="error">Down</Badge>;
 }
 
+function buildPieData(history) {
+  const success = history.filter(t => t.status === 'success').length;
+  const error = history.filter(t => t.status === 'error').length;
+  return [
+    { label: 'Success', value: success, color: 'var(--success-color)' },
+    { label: 'Failed',  value: error,   color: 'var(--error-color)'   },
+  ].filter(d => d.value > 0);
+}
+
+function buildBarData(history) {
+  const counts = {};
+  for (const t of history) {
+    const key = `${t.project}/${t.repo}`;
+    counts[key] = (counts[key] ?? 0) + 1;
+  }
+  return Object.entries(counts).map(([repo, count]) => ({ repo, count }));
+}
+
+function buildLineData(history) {
+  const buckets = {};
+  for (const t of history) {
+    const d = new Date(t.startedAt);
+    const label = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+    if (!buckets[label]) buckets[label] = { time: label, success: 0, error: 0 };
+    buckets[label][t.status === 'error' ? 'error' : 'success']++;
+  }
+  return Object.values(buckets).sort((a, b) => a.time.localeCompare(b.time));
+}
+
 function Dashboard() {
   const { data: health, loading, error, refresh } = useApi('/health', { interval: 10000 });
   const { data: tasks } = useApi('/api/tasks', { interval: 5000 });
@@ -24,6 +54,11 @@ function Dashboard() {
   const activeCount = tasks?.active?.length ?? 0;
   const failedCount = tasks?.history?.filter(t => t.status === 'error').length ?? 0;
   const repoCount = repos?.repos?.length ?? 0;
+  const history = tasks?.history ?? [];
+
+  const pieData = buildPieData(history);
+  const barData = buildBarData(history);
+  const lineData = buildLineData(history);
 
   return (
     <Box orientation="vertical" spacing={16} style={{ padding: '24px', maxWidth: 720, margin: '0 auto' }}>
@@ -66,6 +101,46 @@ function Dashboard() {
           </Box>
         </Box>
       </PanelCard>
+
+      {pieData.length > 0 && (
+        <PanelCard icon={<Icon icon={Check} />} title="Task Results" collapsible={false}>
+          <PieChart
+            data={pieData}
+            height={220}
+            donut
+            showLegend
+            aria-label="Task results breakdown"
+          />
+        </PanelCard>
+      )}
+
+      {barData.length > 0 && (
+        <PanelCard icon={<Icon icon={Refresh} />} title="Tasks per Repo" collapsible={false}>
+          <BarChart
+            data={barData}
+            series={[{ dataKey: 'count', name: 'Tasks' }]}
+            xAxisKey="repo"
+            height={220}
+            showGrid
+          />
+        </PanelCard>
+      )}
+
+      {lineData.length > 1 && (
+        <PanelCard icon={<Icon icon={Check} />} title="Activity over Time" collapsible={false}>
+          <LineChart
+            data={lineData}
+            series={[
+              { dataKey: 'success', name: 'Success', color: 'var(--success-color)' },
+              { dataKey: 'error',   name: 'Failed',  color: 'var(--error-color)'   },
+            ]}
+            xAxisKey="time"
+            height={220}
+            showGrid
+            showLegend
+          />
+        </PanelCard>
+      )}
 
       {error && (
         <StatusPage
