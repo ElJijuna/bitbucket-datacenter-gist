@@ -1,5 +1,6 @@
 import GitManager from '../../services/git-manager.js';
 import { getActiveTasks, getHistory } from '../../services/task-tracker.js';
+import { getWaiting } from '../../services/queue-manager.js';
 
 function json(body, status) {
   return new Response(JSON.stringify(body), {
@@ -25,6 +26,10 @@ export default function statusRoutes(request) {
 
   if (pathname === '/api/tasks') {
     return json({ active: getActiveTasks(), history: getHistory() }, 200);
+  }
+
+  if (pathname === '/api/queue') {
+    return json({ waiting: getWaiting() }, 200);
   }
 
   return null;
