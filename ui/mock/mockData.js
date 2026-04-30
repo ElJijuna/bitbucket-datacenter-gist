@@ -1,93 +1,85 @@
-// Mock data for development
-const mockData = {
-  health: {
-    status: 'ok',
-    uptime: 3600,
-    version: '0.2.0',
-  },
-  repos: {
-    repos: [
-      {
-        project: 'MYPROJECT',
-        repo: 'backend-api',
-        path: '/data/gists/MYPROJECT/backend-api',
-        ready: true,
-        lastPulledAt: new Date(Date.now() - 300000).toISOString(),
-      },
-      {
-        project: 'MYPROJECT',
-        repo: 'frontend-web',
-        path: '/data/gists/MYPROJECT/frontend-web',
-        ready: true,
-        lastPulledAt: new Date(Date.now() - 600000).toISOString(),
-      },
-      {
-        project: 'TEAM',
-        repo: 'shared-lib',
-        path: '/data/gists/TEAM/shared-lib',
-        ready: false,
-        lastPulledAt: null,
-      },
-    ],
-  },
-  tasks: {
-    active: [
-      {
-        id: 'task-1',
-        project: 'MYPROJECT',
-        repo: 'backend-api',
-        file: 'src/utils/helper.ts',
-        status: 'running',
-        startedAt: new Date(Date.now() - 20000).toISOString(),
-      },
-    ],
-    history: [
-      {
-        id: 'task-2',
-        project: 'MYPROJECT',
-        repo: 'frontend-web',
-        file: 'components/Button.jsx',
-        status: 'success',
-        startedAt: new Date(Date.now() - 120000).toISOString(),
-        finishedAt: new Date(Date.now() - 80000).toISOString(),
-      },
-      {
-        id: 'task-3',
-        project: 'MYPROJECT',
-        repo: 'backend-api',
-        file: 'services/auth.js',
-        status: 'error',
-        error: 'Repository not found',
-        startedAt: new Date(Date.now() - 300000).toISOString(),
-        finishedAt: new Date(Date.now() - 280000).toISOString(),
-      },
-      {
-        id: 'task-4',
-        project: 'TEAM',
-        repo: 'shared-lib',
-        file: 'index.ts',
-        status: 'success',
-        startedAt: new Date(Date.now() - 600000).toISOString(),
-        finishedAt: new Date(Date.now() - 550000).toISOString(),
-      },
-    ],
-  },
-};
+import { readFileSync, existsSync } from 'fs';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+const FIXTURES = join(dirname(fileURLToPath(import.meta.url)), 'fixtures');
+
+function readJson(relPath) {
+  return JSON.parse(readFileSync(join(FIXTURES, relPath), 'utf-8'));
+}
+
+function readGistFile(file) {
+  const p = join(FIXTURES, 'gists', file);
+  return existsSync(p) ? readFileSync(p, 'utf-8') : null;
+}
+
+function ago(ms) {
+  return new Date(Date.now() - ms).toISOString();
+}
+
+function buildRepos() {
+  const { repos } = readJson('repos.json');
+  return {
+    repos: repos.map(({ lastPulledAtOffset, ...r }) => ({
+      ...r,
+      lastPulledAt: lastPulledAtOffset ? ago(lastPulledAtOffset) : null,
+    })),
+  };
+}
+
+function buildTasks() {
+  const { active, history } = readJson('tasks.json');
+  return {
+    active: active.map(({ startedAtOffset, ...t }) => ({
+      ...t,
+      startedAt: ago(startedAtOffset),
+    })),
+    history: history.map(({ startedAtOffset, finishedAtOffset, ...t }) => ({
+      ...t,
+      startedAt: ago(startedAtOffset),
+      finishedAt: ago(finishedAtOffset),
+    })),
+  };
+}
+
+function buildGist(project, repo, file, branch) {
+  const content = readGistFile(file) ?? readGistFile('config.json');
+  return {
+    content,
+    meta: {
+      project,
+      repo,
+      file,
+      branch,
+      updatedAt: ago(3_600_000),
+      size: content.length,
+    },
+  };
+}
 
 export default [
   {
     url: '/health',
     method: 'GET',
-    response: () => mockData.health,
+    response: () => readJson('health.json'),
   },
   {
     url: '/api/repos',
     method: 'GET',
-    response: () => mockData.repos,
+    response: () => buildRepos(),
   },
   {
     url: '/api/tasks',
     method: 'GET',
-    response: () => mockData.tasks,
+    response: () => buildTasks(),
+  },
+  {
+    match: req => req.method === 'GET' && req.url.startsWith('/api/gist/'),
+    response: req => {
+      const url = new URL(req.url, 'http://localhost');
+      const [, , , project, repo, file] = url.pathname.split('/');
+      const branch = url.searchParams.get('branch') || 'main';
+      return buildGist(project, repo, file, branch);
+    },
   },
 ];

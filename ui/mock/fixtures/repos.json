@@ -1,0 +1,25 @@
+{
+  "repos": [
+    {
+      "project": "MYPROJECT",
+      "repo": "backend-api",
+      "path": "/data/gists/MYPROJECT/backend-api",
+      "ready": true,
+      "lastPulledAtOffset": 300000
+    },
+    {
+      "project": "MYPROJECT",
+      "repo": "frontend-web",
+      "path": "/data/gists/MYPROJECT/frontend-web",
+      "ready": true,
+      "lastPulledAtOffset": 600000
+    },
+    {
+      "project": "TEAM",
+      "repo": "shared-lib",
+      "path": "/data/gists/TEAM/shared-lib",
+      "ready": false,
+      "lastPulledAtOffset": null
+    }
+  ]
+}

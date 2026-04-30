@@ -1,0 +1,42 @@
+{
+  "active": [
+    {
+      "id": "task-1",
+      "project": "MYPROJECT",
+      "repo": "backend-api",
+      "file": "config.json",
+      "status": "running",
+      "startedAtOffset": 20000
+    }
+  ],
+  "history": [
+    {
+      "id": "task-2",
+      "project": "MYPROJECT",
+      "repo": "frontend-web",
+      "file": "package.json",
+      "status": "success",
+      "startedAtOffset": 120000,
+      "finishedAtOffset": 80000
+    },
+    {
+      "id": "task-3",
+      "project": "MYPROJECT",
+      "repo": "backend-api",
+      "file": "settings.json",
+      "status": "error",
+      "error": "Repository not found",
+      "startedAtOffset": 300000,
+      "finishedAtOffset": 280000
+    },
+    {
+      "id": "task-4",
+      "project": "TEAM",
+      "repo": "shared-lib",
+      "file": "package.json",
+      "status": "success",
+      "startedAtOffset": 600000,
+      "finishedAtOffset": 550000
+    }
+  ]
+}
