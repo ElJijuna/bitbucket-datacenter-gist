@@ -44,6 +44,7 @@ function RootLayout() {
       topBar={
         <HeaderBar
           flat
+          variant="default"
           title={
             !isMedium
               ? <ViewSwitcher aria-label="View"><NavItems /></ViewSwitcher>
