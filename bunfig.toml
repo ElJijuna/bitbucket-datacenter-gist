@@ -1,0 +1,6 @@
+[test]
+# Only run backend tests (exclude ui/)
+root = "./src/__tests__"
+timeout = 10000
+coverageReporter = ["text", "lcov"]
+coverageSkipTestFiles = true

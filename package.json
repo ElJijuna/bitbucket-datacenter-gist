@@ -8,6 +8,8 @@
         "start": "bun src/api/server.js",
         "dev": "bun --watch src/api/server.js",
         "test": "bun test",
+        "test:watch": "bun test --watch",
+        "test:coverage": "bun test --coverage",
         "lint": "eslint src/",
         "lint:fix": "eslint src/ --fix",
         "ui:dev": "MOCK=false vite --config vite.config.js",
