@@ -9,7 +9,7 @@ export default async function router(request) {
 
   if (pathname.startsWith('/health')) return healthRoutes(request);
 
-  if (pathname.startsWith('/api/')) {
+  if (pathname.startsWith('/api/projects/')) {
     const denied = authMiddleware(request);
     if (denied) return denied;
   }
