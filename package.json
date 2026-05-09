@@ -24,7 +24,7 @@
         "bun",
         "api"
     ],
-    "author": "",
+    "author": "pilmee <pilmee@gmail.com> (https://github.com/ElJijuna)",
     "license": "MIT",
     "dependencies": {
         "@gnome-ui/charts": "^1.28.0",
